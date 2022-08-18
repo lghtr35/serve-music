@@ -15,4 +15,6 @@ public class AlbumRequest extends BaseClass implements Serializable {
     private String name;
 
     private ArtistRequest artistRequest;
+
+    private Integer trackCount;
 }

@@ -9,5 +9,5 @@ public interface IAlbumService {
     public Album create(AlbumRequest newAlbum) throws Exception;
     public List<Album> read(AlbumRequest searchParam)throws Exception;
     public Album update(AlbumRequest updatedAlbum)throws Exception;
-    public boolean delete(AlbumRequest toDelete)throws Exception;
+    public boolean delete(Long toDelete);
 }

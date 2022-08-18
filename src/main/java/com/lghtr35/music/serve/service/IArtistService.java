@@ -6,8 +6,8 @@ import com.lghtr35.music.serve.entity.Artist;
 import java.util.List;
 
 public interface IArtistService {
-    public Artist create(ArtistRequest newAlbum);
+    public Artist create(ArtistRequest newArtist) throws Exception;
     public List<Artist> read(ArtistRequest searchParam);
-    public Artist update(ArtistRequest updatedAlbum);
-    public boolean delete(ArtistRequest toDelete);
+    public Artist update(ArtistRequest updatedArtist) throws Exception;
+    public boolean delete(Long toDelete);
 }

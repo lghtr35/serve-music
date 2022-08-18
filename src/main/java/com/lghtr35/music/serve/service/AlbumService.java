@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -59,11 +60,32 @@ public class AlbumService implements IAlbumService{
 
     @Override
     public Album update(AlbumRequest updatedAlbum) throws Exception {
-        return null;
+        Optional<Album> currentOpt = repo.findById(updatedAlbum.getIdList().get(0));
+        if(!currentOpt.isPresent()){
+            throw new Exception("AlbumService.update => Album to update not present");
+        }
+        Album current = currentOpt.get();
+
+        if(!updatedAlbum.getName().isEmpty()){
+            current.setName(updatedAlbum.getName());
+        }
+        if(updatedAlbum.getArtistRequest() != null){
+            ArtistRequest artistRequest = updatedAlbum.getArtistRequest();
+            if(artistRequest.getIdList().get(0) != current.getId()){
+                Artist artist = queryService.readArtist(artistRequest).get(0);
+                current.setArtist(artist);
+            }
+        }
+        return repo.save(current);
     }
 
     @Override
-    public boolean delete(AlbumRequest toDelete) throws Exception {
-        return false;
+    public boolean delete(Long toDelete) {
+        try {
+            repo.deleteById(toDelete);
+            return true;
+        }catch (Exception err){
+            return false;
+        }
     }
 }

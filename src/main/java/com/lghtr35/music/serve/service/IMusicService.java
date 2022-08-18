@@ -7,8 +7,8 @@ import com.lghtr35.music.serve.entity.Music;
 import java.util.List;
 
 public interface IMusicService {
-    public Music create(MusicRequest newAlbum);
+    public Music create(MusicRequest newAlbum) throws Exception;
     public List<Music> read(MusicRequest searchParam);
-    public Music update(MusicRequest updatedAlbum);
-    public boolean delete(MusicRequest toDelete);
+    public Music update(MusicRequest updatedAlbum) throws Exception;
+    public boolean delete(Long toDelete);
 }

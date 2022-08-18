@@ -70,13 +70,12 @@ public class AlbumController {
         }
     }
 
-    @DeleteMapping("/")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Boolean> Delete(
             @RequestParam(value = "id",required = true) Long id
     ) {
         try {
-            AlbumRequest searchParams = AlbumRequest.builder().idList(Arrays.asList(id)).build();
-            return ResponseEntity.ok().body(this.albumService.delete(searchParams));
+            return ResponseEntity.ok().body(this.albumService.delete(id));
         } catch (Exception err) {
             log.error("AlbumController.GetAll => An error occured, error: ",err);
             return ResponseEntity.internalServerError().body(false);

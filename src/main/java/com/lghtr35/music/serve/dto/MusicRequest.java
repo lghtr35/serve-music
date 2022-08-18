@@ -19,7 +19,7 @@ public class MusicRequest extends BaseClass implements Serializable {
 
     private List<ArtistRequest> artistList;
 
-    private List<String> nameList;
+    private String name;
 
     private String lyrics;
 
