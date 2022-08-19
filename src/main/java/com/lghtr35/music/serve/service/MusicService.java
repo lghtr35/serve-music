@@ -8,17 +8,25 @@ import com.lghtr35.music.serve.entity.Artist;
 import com.lghtr35.music.serve.entity.Music;
 import com.lghtr35.music.serve.repository.MusicRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import javax.annotation.PostConstruct;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
+@Service
 public class MusicService implements IMusicService{
     private MusicRepository repo;
     private AlbumService albumService;
+    @Autowired
     private final QueryService queryService;
+    @PostConstruct
+    public void init(){
+        queryService.setMusicService(this);
+    }
     @Override
     public Music create(MusicRequest newMusic) throws Exception {
         if(newMusic == null){
@@ -55,23 +63,16 @@ public class MusicService implements IMusicService{
     }
 
     @Override
-    public List<Music> read(MusicRequest searchParam){
-        boolean searchAll = false;
-        if(searchParam == null){
-            searchAll = true;
-        }
-
-        List<Music> albums;
-        if(searchAll){
-            albums = repo.findAll();
+    public List<Music> read(Long id) throws Exception{
+        List<Music> tracks = new ArrayList<>();
+        if(id != null){
+            Optional<Music> opt = this.repo.findById(id);
+            if(!opt.isPresent()) throw new Exception("ArtistService.read => There is no record with given id.");
+            tracks.add(opt.get());
         }else{
-            albums = repo.findAll().stream().filter(elem -> searchParam.getAlbumList().contains(elem.getAlbum())
-                            || searchParam.getArtistList().contains(elem.getArtist())
-                            || searchParam.getIdList().contains(elem.getId())
-                            || elem.getName().matches(".*"+searchParam.getName()+".*"))
-                    .collect(Collectors.toList());
+            tracks = this.repo.findAll();
         }
-        return albums;
+        return tracks;
     }
 
     @Override
@@ -86,17 +87,15 @@ public class MusicService implements IMusicService{
             current.setName(updateMusic.getName());
         }
         if(!updateMusic.getArtistList().isEmpty()){
-            ArtistRequest artistRequest = updateMusic.getArtistList().get(0);
-            if(artistRequest.getIdList().get(0) != current.getId()){
-                Artist artist = queryService.readArtist(artistRequest).get(0);
+            if(updateMusic.getArtistList().get(0) != current.getId()){
+                Artist artist = queryService.readArtist(updateMusic.getArtistList().get(0)).get(0);
                 current.setArtist(artist);
             }
         }
 
         if(!updateMusic.getAlbumList().isEmpty()){
-            AlbumRequest albumRequest = updateMusic.getAlbumList().get(0);
-            if(albumRequest.getIdList().get(0) != current.getId()){
-                Album album = queryService.readAlbum(albumRequest).get(0);
+            if(updateMusic.getAlbumList().get(0) != current.getId()){
+                Album album = queryService.readAlbum(updateMusic.getAlbumList().get(0)).get(0);
                 current.setAlbum(album);
             }
         }
@@ -111,5 +110,18 @@ public class MusicService implements IMusicService{
         }catch (Exception err){
             return false;
         }
+    }
+
+    @Override
+    public List<Music> search(MusicRequest musicRequest){
+        List<Music> tracksWithIds;
+        if(musicRequest.getIdList() == null || musicRequest.getIdList().isEmpty()){
+            tracksWithIds = repo.findAll();
+        }else{
+            tracksWithIds = repo.findAllById(musicRequest.getIdList());
+        }
+        return tracksWithIds.stream().filter(elem->
+                elem.getName().matches(".*"+musicRequest.getName()+".*"))
+                .collect(Collectors.toList());
     }
 }

@@ -7,6 +7,7 @@ import com.lghtr35.music.serve.service.IAlbumService;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -16,29 +17,33 @@ import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
-@RestController
 @AllArgsConstructor
-@RequestMapping(value = "api/album",produces = "application/json")
+@RestController
+@RequestMapping(value = "/api/album",produces = "application/json")
 @Validated
 public class AlbumController {
+    @Autowired
     @NonNull private IAlbumService albumService;
 
-    @GetMapping("/")
+    @GetMapping("")
     public ResponseEntity<List<Album>> GetAll(
             @RequestParam(value = "idList",required = false) List<Long> idList,
             @RequestParam(value = "name",required = false) String name,
             @RequestParam(value = "artistId",required = false) List<Long> artistIdList,
-            @RequestParam(value = "artistName",required = false) String artistName,
-            @RequestParam(value = "trackIdList",required = false) List<Long> trackIdList,
-            @RequestParam(value = "trackNameList",required = false) List<String> trackNameList
-            ){
+            @RequestParam(value = "artistName",required = false) String artistName
+    ){
         try {
-            AlbumRequest searchParams = AlbumRequest.builder()
-                    .idList(idList)
-                    .name(name)
-                    .artistRequest(ArtistRequest.builder().idList(artistIdList).name(artistName).build())
-                    .build();
-            return ResponseEntity.ok().body(this.albumService.read(searchParams));
+            if(idList==null && name==null && artistIdList==null && artistName==null){
+                return ResponseEntity.ok().body(this.albumService.read(null));
+            }else{
+                AlbumRequest albumRequest = AlbumRequest.builder()
+                        .idList(idList)
+                        .artistIdList(artistIdList)
+                        .artistName(artistName)
+                        .name(name)
+                        .build();
+                return ResponseEntity.ok().body(this.albumService.search(albumRequest));
+            }
         }catch (Exception err){
             log.error("AlbumController.GetAll => An error occured, error: ",err);
             return ResponseEntity.internalServerError().body(new ArrayList<>());
@@ -50,15 +55,15 @@ public class AlbumController {
             @PathVariable Long id
             ){
         try {
-            AlbumRequest searchParams = AlbumRequest.builder().idList(Arrays.asList(id)).build();
-            return ResponseEntity.ok().body(this.albumService.read(searchParams).get(0));
+            if(id == null) throw new Exception("MusicController.GetOne => Id parameter can not be null.");
+            return ResponseEntity.ok().body(this.albumService.read(id).get(0));
         }catch (Exception err){
             log.error("AlbumController.GetAll => An error occured, error: ",err);
             return ResponseEntity.internalServerError().body(new Album());
         }
     }
 
-    @PutMapping("/")
+    @PutMapping("")
     public ResponseEntity<Album> UpdateOne(
             @RequestBody AlbumRequest albumToChange
     ){
@@ -82,7 +87,7 @@ public class AlbumController {
         }
     }
 
-    @PostMapping("/")
+    @PostMapping("")
     public ResponseEntity<Album> Create(
             @RequestBody AlbumRequest albumRequest
     ){

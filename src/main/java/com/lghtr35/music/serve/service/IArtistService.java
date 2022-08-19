@@ -7,7 +7,8 @@ import java.util.List;
 
 public interface IArtistService {
     public Artist create(ArtistRequest newArtist) throws Exception;
-    public List<Artist> read(ArtistRequest searchParam);
+    public List<Artist> read(Long id) throws Exception;
+    public List<Artist> search(ArtistRequest artistRequest) throws Exception;
     public Artist update(ArtistRequest updatedArtist) throws Exception;
     public boolean delete(Long toDelete);
 }

@@ -1,9 +1,6 @@
 package com.lghtr35.music.serve.dto;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.io.Serializable;
 import java.util.List;
@@ -12,6 +9,7 @@ import java.util.List;
 @Setter
 @Builder
 @RequiredArgsConstructor
+@AllArgsConstructor
 public class ArtistRequest extends BaseClass implements Serializable {
     private List<Long> idList;
 

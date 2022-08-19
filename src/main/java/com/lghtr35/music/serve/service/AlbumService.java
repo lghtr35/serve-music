@@ -6,22 +6,30 @@ import com.lghtr35.music.serve.entity.Album;
 import com.lghtr35.music.serve.entity.Artist;
 import com.lghtr35.music.serve.repository.AlbumRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
+@Service
 public class AlbumService implements IAlbumService{
     private AlbumRepository repo;
     private final QueryService queryService;
+    @PostConstruct
+    public void init(){
+        queryService.setAlbumService(this);
+    }
     @Override
     public Album create(AlbumRequest newAlbum) throws Exception {
         if(newAlbum == null){
             throw new Exception("No album info is present to add.");
         }
-        Artist artist = queryService.readArtist(newAlbum.getArtistRequest()).get(0);
+        Artist artist = queryService.readArtist(newAlbum.getArtistIdList().get(0)).get(0);
         if(artist == null){
             throw new Exception("No artist with given info found to add the album.");
         }
@@ -38,23 +46,18 @@ public class AlbumService implements IAlbumService{
     }
 
     @Override
-    public List<Album> read(AlbumRequest searchParam) throws Exception {
-        boolean searchAll = false;
-        if(searchParam == null){
-            searchAll = true;
-        }
-        if(searchParam.getArtistRequest() == null){
-            searchParam.setArtistRequest(ArtistRequest.builder().idList(new ArrayList<>()).name("").build());
-        }
-        List<Album> albums;
-        if(searchAll){
+    public List<Album> read(Long id) throws Exception {
+        List<Album> albums = new ArrayList<>();
+        if(id != null){
+            Optional<Album> opt = repo.findById(id);
+            if(!opt.isPresent()){
+                throw new Exception("AlbumService.read => No record with given id.");
+            }
+            albums.add(opt.get());
+        }else {
             albums = repo.findAll();
-        }else{
-            albums = repo.findAll().stream().filter(elem -> searchParam.getArtistRequest().getIdList().contains(elem.getArtist().getId())
-                            || searchParam.getIdList().contains(elem.getId())
-                            || elem.getName().matches(".*"+searchParam.getName()+".*"))
-                    .collect(Collectors.toList());
         }
+
         return albums;
     }
 
@@ -66,15 +69,21 @@ public class AlbumService implements IAlbumService{
         }
         Album current = currentOpt.get();
 
-        if(!updatedAlbum.getName().isEmpty()){
+        if(updatedAlbum.getTrackCount() != null){
+            current.setTrackCount(updatedAlbum.getTrackCount());
+        }
+        if(updatedAlbum.getName()!=null && !updatedAlbum.getName().isEmpty()){
             current.setName(updatedAlbum.getName());
         }
-        if(updatedAlbum.getArtistRequest() != null){
-            ArtistRequest artistRequest = updatedAlbum.getArtistRequest();
-            if(artistRequest.getIdList().get(0) != current.getId()){
-                Artist artist = queryService.readArtist(artistRequest).get(0);
+        if(updatedAlbum.getArtistIdList() != null){
+            if(updatedAlbum.getArtistIdList().get(0) != current.getId()){
+                Artist artist = queryService.readArtist(updatedAlbum.getArtistIdList().get(0)).get(0);
                 current.setArtist(artist);
             }
+        }
+        if(updatedAlbum.getArtistName()!=null && !updatedAlbum.getArtistName().isEmpty() && updatedAlbum.getArtistName() != current.getName()){
+            Artist artist = queryService.searchArtist(ArtistRequest.builder().name(updatedAlbum.getArtistName()).build()).get(0);
+            current.setArtist(artist);
         }
         return repo.save(current);
     }
@@ -87,5 +96,19 @@ public class AlbumService implements IAlbumService{
         }catch (Exception err){
             return false;
         }
+    }
+
+    @Override
+    public List<Album> search(AlbumRequest albumRequest){
+        List<Album> albumsWithIds;
+        if(albumRequest.getIdList() == null || albumRequest.getIdList().isEmpty()){
+            albumsWithIds = repo.findAll();
+        }else{
+            albumsWithIds = repo.findAllById(albumRequest.getIdList());
+        }
+        return albumsWithIds.stream().filter(elem->(
+                        elem.getName().matches(".*"+albumRequest.getName()+".*")
+                                && elem.getName().matches(".*"+albumRequest.getArtistName()+"*"))
+        ).collect(Collectors.toList());
     }
 }

@@ -9,12 +9,15 @@ import java.util.List;
 @Setter
 @Builder
 @RequiredArgsConstructor
+@AllArgsConstructor
 public class AlbumRequest extends BaseClass implements Serializable {
     private List<Long> idList;
 
     private String name;
 
-    private ArtistRequest artistRequest;
+    private String artistName;
+
+    private List<Long> artistIdList;
 
     private Integer trackCount;
 }

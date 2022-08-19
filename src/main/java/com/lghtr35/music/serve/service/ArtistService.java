@@ -7,16 +7,25 @@ import com.lghtr35.music.serve.entity.Artist;
 import com.lghtr35.music.serve.repository.AlbumRepository;
 import com.lghtr35.music.serve.repository.ArtistRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
+@Service
 public class ArtistService implements IArtistService{
     private ArtistRepository repo;
-    private final QueryService queryService;
+
+    private QueryService queryService;
+    @PostConstruct
+    public void init(){
+        queryService.setArtistService(this);
+    }
     @Override
     public Artist create(ArtistRequest newArtist) throws Exception {
         if(newArtist == null){
@@ -26,26 +35,25 @@ public class ArtistService implements IArtistService{
         if(newArtist.getName().isEmpty()){
             throw new Exception("Can not create album without name");
         }
+        if(newArtist.getAgeList().isEmpty()){
+            throw new Exception("Can not create album without age");
+        }
         Artist toSave = Artist.builder()
                 .Name(newArtist.getName())
+                .Age(newArtist.getAgeList().get(0))
                 .build();
         return repo.save(toSave);
     }
 
     @Override
-    public List<Artist> read(ArtistRequest searchParam){
-        boolean searchAll = false;
-        if(searchParam == null){
-            searchAll = true;
-        }
-        List<Artist> artists;
-        if(searchAll){
-            artists = repo.findAll();
+    public List<Artist> read(Long id) throws Exception{
+        List<Artist> artists = new ArrayList<>();
+        if(id != null){
+            Optional<Artist> opt = this.repo.findById(id);
+            if(!opt.isPresent()) throw new Exception("ArtistService.read => There is no record with given id.");
+            artists.add(opt.get());
         }else{
-            artists = repo.findAll().stream().filter(elem -> searchParam.getAgeList().contains(elem.getAge())
-                            || searchParam.getIdList().contains(elem.getId())
-                            || elem.getName().matches(".*"+searchParam.getName()+".*"))
-                    .collect(Collectors.toList());
+            artists = this.repo.findAll();
         }
         return artists;
     }
@@ -75,5 +83,19 @@ public class ArtistService implements IArtistService{
         }catch (Exception err){
             return false;
         }
+    }
+
+    @Override
+    public List<Artist> search(ArtistRequest artistRequest){
+        List<Artist> artistsWithId;
+        if(artistRequest.getIdList() == null || artistRequest.getIdList().isEmpty()){
+            artistsWithId = repo.findAll();
+        }else{
+            artistsWithId = repo.findAllById(artistRequest.getIdList());
+        }
+        return artistsWithId.stream().filter(elem->(
+                elem.getName().contains(".*"+artistRequest.getName()+".*")
+                        || artistRequest.getAgeList().contains(elem.getAge())
+        )).collect(Collectors.toList());
     }
 }

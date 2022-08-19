@@ -7,7 +7,8 @@ import java.util.List;
 
 public interface IAlbumService {
     public Album create(AlbumRequest newAlbum) throws Exception;
-    public List<Album> read(AlbumRequest searchParam)throws Exception;
+    public List<Album> read(Long Id)throws Exception;
+    public List<Album> search(AlbumRequest albumRequest) throws Exception;
     public Album update(AlbumRequest updatedAlbum)throws Exception;
     public boolean delete(Long toDelete);
 }
